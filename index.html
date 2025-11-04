@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>款式编码查询工具</title>
+    <meta name="description" content="快速查询款式编码，支持普通话和粤语语音播报">
+    
+    <!-- 网站图标 -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    
+    <style>
+        :root {
+            --primary: #4a6bdf;
+            --secondary: #6a11cb;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 10px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--dark);
+            font-weight: 600;
+        }
+        
+        .language-selector {
+            background-color: var(--light);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary);
+        }
+        
+        .language-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .language-option {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .language-option.active {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .data-info {
+            background-color: var(--light);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 10px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .data-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 2px solid #e9ecef;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: var(--primary);
+            outline: none;
+            transform: scale(1.02);
+        }
+        
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+        
+        .suggestion-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .suggestion-item:hover {
+            background: var(--light);
+        }
+        
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .search-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        
+        .search-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .voice-output-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        
+        .voice-output-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .voice-output-btn.playing {
+            background: var(--warning);
+            color: var(--dark);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .copy-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--warning);
+            color: var(--dark);
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .result-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .result-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            animation: modalAppear 0.4s ease-out;
+        }
+        
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: var(--dark);
+            font-weight: 700;
+        }
+        
+        .result-code {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #666;
+            background: var(--light);
+            padding: 12px;
+            border-radius: 8px;
+        }
+        
+        .result-factory {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
+            border-radius: 12px;
+            border: 2px dashed var(--primary);
+        }
+        
+        .audio-status {
+            font-size: 1rem;
+            color: var(--success);
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(40, 167, 69, 0.1);
+            border-radius: 8px;
+            min-height: 20px;
+        }
+        
+        .close-btn {
+            margin-top: 20px;
+            padding: 14px 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .close-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dark);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 10px;
+            z-index: 1001;
+            opacity: 0;
+            transition: all 0.3s;
+            max-width: 90%;
+            text-align: center;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-10px);
+        }
+        
+        .audio-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .audio-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .play-btn {
+            background: var(--success);
+            color: white;
+        }
+        
+        .stop-btn {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .audio-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .auto-search-info {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        .language-indicator {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔊 款式编码查询工具</h1>
+            <p>自动搜索 • 多语言语音播报 • 云端数据</p>
+        </div>
+        
+        <div class="content">
+            <!-- 语言选择部分 -->
+            <div class="section">
+                <div class="section-title">语言选择</div>
+                
+                <div class="language-selector">
+                    <p>选择语音播报语言：</p>
+                    <div class="language-options">
+                        <div class="language-option active" data-language="mandarin">
+                            🇨🇳 普通话
+                        </div>
+                        <div class="language-option" data-language="cantonese">
+                            🇭🇰 粤语
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 数据状态部分 -->
+            <div class="section">
+                <div class="section-title">数据状态</div>
+                
+                <div class="data-info" id="dataInfo">
+                    <div class="loading" id="loadingIndicator">
+                        <div class="spinner"></div>
+                        <p>正在加载云端数据...</p>
+                    </div>
+                    <div id="loadedInfo" style="display: none;">
+                        <p>✅ 数据加载完成！可以开始查询</p>
+                        <div class="update-info" id="updateInfo"></div>
+                    </div>
+                    <div id="errorInfo" style="display: none;">
+                        <p>❌ 数据加载失败，使用内置数据</p>
+                    </div>
+                </div>
+                
+                <div class="data-stats" id="dataStats" style="display: none;">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalRecords">0</div>
+                        <div class="stat-label">总记录数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="uniqueFactories">0</div>
+                        <div class="stat-label">工厂数量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="searchCount">0</div>
+                        <div class="stat-label">查询次数</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 查询部分 -->
+            <div class="section">
+                <div class="section-title">快速查询</div>
+                
+                <div class="input-group">
+                    <label for="searchCodeInput">🎯 输入款式编码</label>
+                    <input type="text" id="searchCodeInput" placeholder="输入编码自动搜索，如：Z1206" autocomplete="off">
+                    <div class="search-suggestions" id="searchSuggestions"></div>
+                </div>
+                
+                <div class="auto-search-info">
+                    💡 输入时自动搜索，按回车键或点击按钮确认
+                </div>
+                
+                <button class="search-btn" id="searchBtn" disabled>
+                    🔍 立即查询
+                </button>
+                
+                <button class="voice-output-btn" id="voiceOutputBtn" disabled>
+                    🔊 播放工厂语音 <span class="language-indicator" id="languageIndicator">普通话</span>
+                </button>
+                
+                <button class="copy-btn" id="copyResultBtn" disabled>
+                    📋 复制结果
+                </button>
+                
+                <div class="audio-status" id="audioStatus">
+                    等待数据加载...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 查询结果弹窗 -->
+    <div class="result-modal" id="resultModal">
+        <div class="result-content">
+            <div class="result-title">🎉 查询成功！</div>
+            <div class="result-code" id="resultCode"></div>
+            <div class="result-factory" id="resultFactory"></div>
+            
+            <div class="audio-status" id="modalAudioStatus">
+                点击按钮播放工厂语音
+            </div>
+            
+            <div class="audio-controls">
+                <button class="audio-btn play-btn" id="modalPlayBtn">
+                    🔊 播放语音 <span class="language-indicator" id="modalLanguageIndicator">普通话</span>
+                </button>
+                <button class="audio-btn stop-btn" id="modalStopBtn">
+                    ⏹️ 停止
+                </button>
+            </div>
+            
+            <button class="close-btn" id="closeResultBtn">
+                继续查询
+            </button>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <!-- 隐藏的音频元素 -->
+    <audio id="audioPlayer" preload="auto"></audio>
+
+    <script>
+        // 内置数据（备用）
+        const fallbackData = [
+            {"款式编码": "Z1206", "工厂代号": "J"},
+            {"款式编码": "D101", "工厂代号": "SD"},
+            {"款式编码": "D105", "工厂代号": "SD"},
+            {"款式编码": "D109", "工厂代号": "SD"},
+            {"款式编码": "D110", "工厂代号": "SD"},
+            {"款式编码": "D115", "工厂代号": "SD"},
+            {"款式编码": "D117", "工厂代号": "SD"},
+            {"款式编码": "D122", "工厂代号": "SD"},
+            {"款式编码": "D126", "工厂代号": "SD"},
+            {"款式编码": "D129", "工厂代号": "SD"},
+            {"款式编码": "D1301", "工厂代号": "HY"},
+            {"款式编码": "D1304", "工厂代号": "HY"},
+            {"款式编码": "D1305", "工厂代号": "HY"},
+            {"款式编码": "D1306", "工厂代号": "HY"},
+            {"款式编码": "D130", "工厂代号": "SD"},
+            {"款式编码": "D1307", "工厂代号": "HY"},
+            {"款式编码": "D1314", "工厂代号": "HY"},
+            {"款式编码": "D1320", "工厂代号": "HY"},
+            {"款式编码": "N001", "工厂代号": "N"},
+            {"款式编码": "ZYM001", "工厂代号": "ZYM"}
+        ];
+
+        // 多语言音频库
+        const audioLibrary = {
+            'mandarin': {
+                'N': './N_mandarin.mp3',
+                'SD': './SD_mandarin.mp3', 
+                'HY': './HY_mandarin.mp3',
+                'ZYM': './ZYM_mandarin.mp3',
+                'J': './J_mandarin.mp3'
+            },
+            'cantonese': {
+                'N': './N_cantonese.mp3',
+                'SD': './SD_cantonese.mp3', 
+                'HY': './HY_cantonese.mp3',
+                'ZYM': './ZYM_cantonese.mp3',
+                'J': './J_cantonese.mp3'
+            }
+        };
+
+        // 应用状态
+        let styleData = [];
+        let searchCount = 0;
+        let lastResult = null;
+        let isPlaying = false;
+        let searchTimeout = null;
+        let currentLanguage = 'mandarin'; // 默认普通话
+        
+        // DOM元素
+        const dataInfo = document.getElementById('dataInfo');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const loadedInfo = document.getElementById('loadedInfo');
+        const errorInfo = document.getElementById('errorInfo');
+        const updateInfo = document.getElementById('updateInfo');
+        const dataStats = document.getElementById('dataStats');
+        const totalRecords = document.getElementById('totalRecords');
+        const uniqueFactories = document.getElementById('uniqueFactories');
+        const searchCountElement = document.getElementById('searchCount');
+        const searchCodeInput = document.getElementById('searchCodeInput');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        const searchBtn = document.getElementById('searchBtn');
+        const voiceOutputBtn = document.getElementById('voiceOutputBtn');
+        const copyResultBtn = document.getElementById('copyResultBtn');
+        const audioStatus = document.getElementById('audioStatus');
+        const languageIndicator = document.getElementById('languageIndicator');
+        const resultModal = document.getElementById('resultModal');
+        const resultCode = document.getElementById('resultCode');
+        const resultFactory = document.getElementById('resultFactory');
+        const modalAudioStatus = document.getElementById('modalAudioStatus');
+        const modalPlayBtn = document.getElementById('modalPlayBtn');
+        const modalStopBtn = document.getElementById('modalStopBtn');
+        const modalLanguageIndicator = document.getElementById('modalLanguageIndicator');
+        const closeResultBtn = document.getElementById('closeResultBtn');
+        const toast = document.getElementById('toast');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const languageOptions = document.querySelectorAll('.language-option');
+        
+        // 初始化应用
+        async function init() {
+            bindEvents();
+            await loadDataFromServer();
+            updateSearchCount();
+            checkAudioFiles();
+            updateLanguageIndicators();
+        }
+        
+        function bindEvents() {
+            searchBtn.addEventListener('click', performSearch);
+            voiceOutputBtn.addEventListener('click', playFactoryVoice);
+            copyResultBtn.addEventListener('click', copyLastResult);
+            modalPlayBtn.addEventListener('click', playFactoryVoice);
+            modalStopBtn.addEventListener('click', stopAudioPlayback);
+            closeResultBtn.addEventListener('click', closeResultModal);
+            
+            // 语言选择事件
+            languageOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    // 移除所有活动状态
+                    languageOptions.forEach(opt => opt.classList.remove('active'));
+                    // 设置当前选项为活动状态
+                    option.classList.add('active');
+                    // 更新当前语言
+                    currentLanguage = option.getAttribute('data-language');
+                    updateLanguageIndicators();
+                    showToast(`已切换到 ${currentLanguage === 'mandarin' ? '普通话' : '粤语'} 语音`);
+                });
+            });
+            
+            // 输入时自动搜索
+            searchCodeInput.addEventListener('input', handleInputChange);
+            
+            // 回车键搜索
+            searchCodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+            
+            // 点击外部关闭建议框
+            document.addEventListener('click', (e) => {
+                if (!searchCodeInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                    hideSuggestions();
+                }
+            });
+            
+            // 音频事件监听
+            audioPlayer.addEventListener('play', () => {
+                isPlaying = true;
+                updateAudioUI();
+            });
+            
+            audioPlayer.addEventListener('ended', () => {
+                isPlaying = false;
+                updateAudioUI();
+                audioStatus.innerHTML = '✅ 播放完成';
+                modalAudioStatus.innerHTML = '播放完成';
+            });
+            
+            audioPlayer.addEventListener('error', (e) => {
+                console.error('Audio error:', e);
+                isPlaying = false;
+                audioStatus.innerHTML = '❌ 音频文件加载失败';
+                modalAudioStatus.innerHTML = '❌ 音频文件加载失败';
+                showToast('❌ 语音文件加载失败', true);
+                updateAudioUI();
+            });
+            
+            resultModal.addEventListener('click', (e) => {
+                if (e.target === resultModal) {
+                    closeResultModal();
+                }
+            });
+        }
+        
+        // 更新语言指示器
+        function updateLanguageIndicators() {
+            const languageText = currentLanguage === 'mandarin' ? '普通话' : '粤语';
+            languageIndicator.textContent = languageText;
+            modalLanguageIndicator.textContent = languageText;
+        }
+        
+        // 从服务器加载数据
+        async function loadDataFromServer() {
+            try {
+                showToast('📡 正在加载云端数据...');
+                
+                const response = await fetch('./data.json');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data && data.data && Array.isArray(data.data)) {
+                    styleData = data.data;
+                    showSuccessState(data.lastUpdated);
+                    showToast('✅ 云端数据加载成功！');
+                } else {
+                    throw new Error('数据格式错误');
+                }
+                
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                // 使用备用数据
+                styleData = fallbackData;
+                showErrorState();
+                showToast('⚠️ 使用内置数据');
+            }
+            
+            updateDisplay();
+        }
+        
+        function showSuccessState(lastUpdated) {
+            loadingIndicator.style.display = 'none';
+            loadedInfo.style.display = 'block';
+            errorInfo.style.display = 'none';
+            dataStats.style.display = 'grid';
+            
+            if (lastUpdated) {
+                updateInfo.textContent = `最后更新: ${lastUpdated}`;
+            }
+            
+            // 启用输入和按钮
+            searchCodeInput.disabled = false;
+            searchBtn.disabled = false;
+            voiceOutputBtn.disabled = false;
+            copyResultBtn.disabled = false;
+        }
+        
+        function showErrorState() {
+            loadingIndicator.style.display = 'none';
+            loadedInfo.style.display = 'none';
+            errorInfo.style.display = 'block';
+            dataStats.style.display = 'grid';
+            
+            // 启用输入和按钮
+            searchCodeInput.disabled = false;
+            searchBtn.disabled = false;
+            voiceOutputBtn.disabled = false;
+            copyResultBtn.disabled = false;
+        }
+        
+        function updateDisplay() {
+            totalRecords.textContent = styleData.length;
+            
+            const factories = new Set(styleData.map(item => item.工厂代号));
+            uniqueFactories.textContent = factories.size;
+            
+            searchCountElement.textContent = searchCount;
+        }
+        
+        // 检查音频文件
+        function checkAudioFiles() {
+            audioStatus.innerHTML = '🔊 检查音频文件...';
+            
+            const testAudio = new Audio();
+            testAudio.src = audioLibrary[currentLanguage]['J'];
+            testAudio.oncanplaythrough = () => {
+                audioStatus.innerHTML = '✅ 语音系统就绪';
+            };
+            testAudio.onerror = () => {
+                audioStatus.innerHTML = '❌ 音频文件路径错误';
+                showToast('❌ 请检查音频文件路径', true);
+            };
+        }
+        
+        function updateSearchCount() {
+            const saved = localStorage.getItem('searchCount');
+            if (saved) {
+                searchCount = parseInt(saved) || 0;
+                searchCountElement.textContent = searchCount;
+            }
+        }
+        
+        function saveSearchCount() {
+            localStorage.setItem('searchCount', searchCount.toString());
+        }
+        
+        // 输入变化处理
+        function handleInputChange(e) {
+            const value = e.target.value.trim();
+            
+            // 清除之前的定时器
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            if (value.length === 0) {
+                hideSuggestions();
+                return;
+            }
+            
+            // 延迟搜索，避免频繁触发
+            searchTimeout = setTimeout(() => {
+                const suggestions = getSearchSuggestions(value);
+                showSuggestions(suggestions);
+                
+                // 如果只有一个匹配项，自动填充
+                if (suggestions.length === 1) {
+                    const firstSuggestion = suggestions[0];
+                    searchCodeInput.value = firstSuggestion.款式编码;
+                    performSearch();
+                }
+            }, 300);
+        }
+        
+        // 获取搜索建议
+        function getSearchSuggestions(query) {
+            if (!query) return [];
+            
+            const lowerQuery = query.toLowerCase();
+            return styleData.filter(item => 
+                item.款式编码.toLowerCase().includes(lowerQuery) ||
+                item.工厂代号.toLowerCase().includes(lowerQuery)
+            ).slice(0, 5); // 最多显示5条建议
+        }
+        
+        // 显示搜索建议
+        function showSuggestions(suggestions) {
+            if (suggestions.length === 0) {
+                hideSuggestions();
+                return;
+            }
+            
+            const html = suggestions.map(item => `
+                <div class="suggestion-item" data-code="${item.款式编码}">
+                    <strong>${item.款式编码}</strong> - ${item.工厂代号}
+                </div>
+            `).join('');
+            
+            searchSuggestions.innerHTML = html;
+            searchSuggestions.style.display = 'block';
+            
+            // 绑定点击事件
+            searchSuggestions.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const code = item.getAttribute('data-code');
+                    searchCodeInput.value = code;
+                    performSearch();
+                    hideSuggestions();
+                });
+            });
+        }
+        
+        // 隐藏建议框
+        function hideSuggestions() {
+            searchSuggestions.style.display = 'none';
+        }
+        
+        // 执行搜索
+        function performSearch() {
+            const styleCode = searchCodeInput.value.trim();
+            if (!styleCode) {
+                showToast('❌ 请输入款式编码', true);
+                return;
+            }
+            
+            hideSuggestions();
+            
+            const result = styleData.find(item => 
+                item.款式编码.toUpperCase() === styleCode.toUpperCase()
+            );
+            
+            if (result) {
+                searchCount++;
+                searchCountElement.textContent = searchCount;
+                saveSearchCount();
+                
+                lastResult = { 
+                    styleCode: styleCode, 
+                    factoryCode: result.工厂代号 
+                };
+                
+                showSuccessResult(styleCode, result.工厂代号);
+                
+                // 自动播放语音
+                setTimeout(() => {
+                    playFactoryVoice();
+                }, 500);
+            } else {
+                showToast(`❌ 未找到款式编码：${styleCode}`, true);
+            }
+        }
+        
+        function showSuccessResult(styleCode, factoryCode) {
+            resultCode.textContent = `款式编码: ${styleCode}`;
+            resultFactory.textContent = `${factoryCode} 工厂`;
+            resultModal.style.display = 'flex';
+            
+            // 清空输入框
+            searchCodeInput.value = '';
+        }
+        
+        // 播放工厂语音
+        function playFactoryVoice() {
+            if (!lastResult) {
+                showToast('❌ 没有可播放的结果', true);
+                return;
+            }
+            
+            if (isPlaying) {
+                stopAudioPlayback();
+                return;
+            }
+            
+            const factoryCode = lastResult.factoryCode;
+            const audioUrl = audioLibrary[currentLanguage][factoryCode];
+            
+            if (!audioUrl) {
+                showToast(`❌ 没有找到 ${factoryCode} 的${currentLanguage === 'mandarin' ? '普通话' : '粤语'}语音文件`, true);
+                return;
+            }
+            
+            playAudio(audioUrl, factoryCode);
+        }
+        
+        // 播放单个音频
+        function playAudio(audioUrl, factoryCode) {
+            isPlaying = true;
+            updateAudioUI();
+            
+            audioPlayer.src = audioUrl;
+            
+            const playPromise = audioPlayer.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    const languageText = currentLanguage === 'mandarin' ? '普通话' : '粤语';
+                    const statusText = `正在播放 ${languageText}: ${factoryCode}`;
+                    audioStatus.innerHTML = statusText;
+                    modalAudioStatus.innerHTML = statusText;
+                }).catch(error => {
+                    console.error('Play failed:', error);
+                    isPlaying = false;
+                    updateAudioUI();
+                    showToast('❌ 播放失败', true);
+                });
+            }
+        }
+        
+        // 停止音频播放
+        function stopAudioPlayback() {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+            isPlaying = false;
+            updateAudioUI();
+            
+            audioStatus.innerHTML = '⏹️ 播放已停止';
+            modalAudioStatus.innerHTML = '⏹️ 播放已停止';
+        }
+        
+        // 更新音频UI状态
+        function updateAudioUI() {
+            if (isPlaying) {
+                voiceOutputBtn.classList.add('playing');
+                voiceOutputBtn.innerHTML = '⏸️ 停止播放 <span class="language-indicator" id="languageIndicator">' + 
+                    (currentLanguage === 'mandarin' ? '普通话' : '粤语') + '</span>';
+                modalPlayBtn.innerHTML = '⏸️ 停止播放 <span class="language-indicator" id="modalLanguageIndicator">' + 
+                    (currentLanguage === 'mandarin' ? '普通话' : '粤语') + '</span>';
+            } else {
+                voiceOutputBtn.classList.remove('playing');
+                voiceOutputBtn.innerHTML = '🔊 播放工厂语音 <span class="language-indicator" id="languageIndicator">' + 
+                    (currentLanguage === 'mandarin' ? '普通话' : '粤语') + '</span>';
+                modalPlayBtn.innerHTML = '🔊 播放语音 <span class="language-indicator" id="modalLanguageIndicator">' + 
+                    (currentLanguage === 'mandarin' ? '普通话' : '粤语') + '</span>';
+            }
+        }
+        
+        function copyLastResult() {
+            if (!lastResult) {
+                showToast('❌ 没有可复制的结果', true);
+                return;
+            }
+            
+            const resultText = `款式编码: ${lastResult.styleCode}\n工厂代号: ${lastResult.factoryCode}`;
+            
+            navigator.clipboard.writeText(resultText).then(() => {
+                showToast('✅ 结果已复制到剪贴板');
+            }).catch(() => {
+                const textArea = document.createElement('textarea');
+                textArea.value = resultText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast('✅ 结果已复制到剪贴板');
+            });
+        }
+        
+        function closeResultModal() {
+            stopAudioPlayback();
+            resultModal.style.display = 'none';
+            searchCodeInput.focus();
+        }
+        
+        function showToast(message, isError = false) {
+            toast.textContent = message;
+            toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
