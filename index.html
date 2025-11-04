@@ -6,14 +6,16 @@
     <title>款式编码查询工具</title>
     <meta name="description" content="快速查询款式编码，支持普通话和粤语语音播报">
     
-    <!-- 修复图标路径 -->
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <!-- 修复图标路径 - 使用绝对路径和备用方案 -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="manifest" href="site.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    
+    <!-- 备用方案：使用data URL嵌入小图标 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔊</text></svg>">
     
     <style>
-        /* 样式保持不变 */
         :root {
             --primary: #4a6bdf;
             --secondary: #6a11cb;
